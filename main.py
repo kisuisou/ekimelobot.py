@@ -1,6 +1,13 @@
 import os, discord, asyncio
-from discord import app_commands
+from discord import app_commands, Emoji
 from dotenv import load_dotenv
+from pathlib import Path
+import tomllib
+
+with open('config.toml', 'rb') as f:
+    config = tomllib.load(f)
+
+SOUND_DIR = Path(config["sound_dir"])
 
 load_dotenv("./.env")
 
@@ -26,7 +33,10 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         else:
             vc = await voice_channel.connect()
 
-        if not os.path.exists(f"./ekimelo/{ekimelo}.mp3"):
+        data = config["sounds"][ekimelo]
+        path = SOUND_DIR / data["file"]
+
+        if not os.path.exists(path):
             await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
             return
 
@@ -41,8 +51,8 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
             except:
                 pass
 
-        await interaction.response.send_message(f"{ekimelo}を再生します")
-        vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=f"./ekimelo/{ekimelo}.mp3"), after=my_after)
+        await interaction.response.send_message(data["comment"])
+        vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=path), after=my_after)
 
 @client.event
 async def on_ready():
