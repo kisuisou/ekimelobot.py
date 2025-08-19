@@ -6,8 +6,8 @@ comment = ":st: 虹と雪のバラードを再生します" # コマンドを実
 
 [[emoji]] # 利用するcustom emojiの情報をここで指定する
 name = "st" # discord側で指定しているemojiの名前
-id = 1310504702907252736
+id = 0
 
 [[emoji]]
 name = "jre"
-id = 1401942618979696701
+id = 0
