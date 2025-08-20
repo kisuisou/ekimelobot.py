@@ -62,7 +62,8 @@ def replace_custom_emojis(txt: str, d: dict[str, Emoji]) -> str:
     :returns: custom emojiをdiscordで読めるように変換した文字列
     :rtype: str
     """
-    pattern = '|'.join(re.escape(k) for k in d.keys())
+    # `:st:|:jr_west:`のようなregexパターンを作る
+    pattern = '|'.join(re.escape(k) for k in d.keys()) 
     return re.sub(pattern, lambda m: str(d[m.group(0)]), txt)
 
 intents = discord.Intents.default()
@@ -70,7 +71,7 @@ intents.message_content = True
 intents.guilds = True          
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
-emojis = load_emoji(client, config)
+emoji: dict[str, Emoji] | None = None
 
 @tree.command(name="emplay",description="駅メロを流します")
 async def emplay_command(interaction: discord.Interaction, ekimelo: str):
@@ -103,6 +104,7 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
             except:
                 pass
 
+        global emojis
         comment = replace_custom_emojis(data.comment, emojis)
         await interaction.response.send_message(f'▶️ {comment}')
         vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=str(path)), after=my_after)
@@ -111,5 +113,7 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
 async def on_ready():
     print("ready")
     await tree.sync(guild=discord.Object(id=int(SERVER_ID)))
+    global emojis
+    emojis = load_emoji(client, config)
 
 client.run(TOKEN)
