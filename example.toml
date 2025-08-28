@@ -1,0 +1,13 @@
+sound_dir = "./data"
+
+[sounds.st]
+file = "" # 駅メロの音楽ファイルのファイル名を指定する。file_dirからの相対パスで指定する
+comment = ":st: 虹と雪のバラードを再生します" # コマンドを実行したらBotが返す文章を指定する
+
+[[emoji]] # 利用するcustom emojiの情報をここで指定する
+name = "st" # discord側で指定しているemojiの名前
+id = 0
+
+[[emoji]]
+name = "jre"
+id = 0

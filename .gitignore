@@ -1,2 +1,4 @@
 .env
 ekimelo/*
+*.toml
+!example.toml
