@@ -79,6 +79,14 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
             await interaction.response.send_message("❌ ボイスチャンネルに入ってから実行してください。")
             return
 
+        if not ekimelo in config.sounds.keys():
+            await interaction.response.send_message("❌ 駅メロが見つかりませんでした。")
+            return
+
+        if not os.path.exists(path):
+            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
+            return
+
         voice_channel = interaction.user.voice.channel
 
         if interaction.guild.voice_client:
@@ -88,10 +96,6 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
 
         data = config.sounds[ekimelo]
         path = SOUND_DIR / data.file
-
-        if not os.path.exists(path):
-            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
-            return
 
         if vc.is_playing():
             vc.stop()
