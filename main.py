@@ -107,7 +107,7 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         global emojis
         comment = replace_custom_emojis(data.comment, emojis)
         await interaction.response.send_message(f'▶️ {comment}')
-        vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=str(path)), after=my_after)
+        vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=str(path), before_options="-nostdin", options="-vn -ar 48000 -ac 2 -f s16le"), after=my_after)
 
 @client.event
 async def on_ready():
