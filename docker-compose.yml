@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  app:
+    image: ekimelobot.py:latest
+    container_name: ekimelobot.py
+    env_file:
+      - .env
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./ekimelo:/app/ekimelo
+    command: ["python", "main.py"]
+
