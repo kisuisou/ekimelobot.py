@@ -7,11 +7,14 @@ import tomllib
 
 from src.model import Config
 from src.emoji import load_emoji, replace_custom_emojis
+from src.config import build_dict
 
 with open('config.toml', 'rb') as f:
     config = structure(tomllib.load(f), Config)
 
 SOUND_DIR = Path(config.sound_dir)
+
+name_dict, alias_dict = build_dict(config.sounds)
 
 load_dotenv("./.env")
 
@@ -31,14 +34,6 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
             await interaction.response.send_message("❌ ボイスチャンネルに入ってから実行してください。")
             return
 
-        if not ekimelo in config.sounds.keys():
-            await interaction.response.send_message("❌ 駅メロが見つかりませんでした。")
-            return
-
-        if not os.path.exists(path):
-            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
-            return
-
         voice_channel = interaction.user.voice.channel
 
         if interaction.guild.voice_client:
@@ -46,8 +41,21 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         else:
             vc = await voice_channel.connect()
 
-        data = config.sounds[ekimelo]
+        global name_dict
+        global alias_dict
+        if ekimelo in alias_dict:
+            name = alias_dict[ekimelo]
+            data = name_dict[name]
+        elif ekimelo in name_dict:
+            data = name_dict[ekimelo]
+        else:
+            await interaction.response.send_message("❌ 駅メロが見つかりませんでした。")
+            return
         path = SOUND_DIR / data.file
+
+        if not os.path.exists(path):
+            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
+            return
 
         if vc.is_playing():
             vc.stop()
