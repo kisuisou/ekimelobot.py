@@ -1,8 +1,9 @@
 import os, discord, asyncio
-from discord import app_commands, Emoji
+from discord import app_commands, Emoji, Embed
 from dotenv import load_dotenv
 from cattrs import structure
 from pathlib import Path
+from collections import defaultdict
 import tomllib
 
 from src.model import Config
@@ -72,6 +73,16 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         comment = replace_custom_emojis(data.comment, emojis)
         await interaction.response.send_message(f'▶️ {comment}')
         vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=str(path), before_options="-nostdin", options="-vn -ar 48000 -ac 2 -f s16le"), after=my_after)
+
+@tree.command(name="list",description="botに登録されているメロディを呼び出すための名前、別名と一緒に表示します")
+async def list_command(interaction: discord.Interaction):
+    embed = Embed(title="ekimelobotに登録されているメロディ一覧")
+    formal_to_aliases = defaultdict(list)
+    for alias, formal in alias_dict.items():
+        formal_to_aliases[formal].append(alias)
+    for k, v in formal_to_aliases.items():
+        embed.add_field(name=k, value=f"alias: {v}", inline=False)
+    await interaction.response.send_message(embed=embed)
 
 @client.event
 async def on_ready():
