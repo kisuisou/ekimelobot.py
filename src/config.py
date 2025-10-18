@@ -11,8 +11,8 @@ def build_dict(sounds: list[SoundConfig]) -> tuple[dict[str, SoundConfig], dict[
     names: dict[str, SoundConfig] = {}
     aliases: dict[str, str] = {}
     for sound in sounds:
-        name = sound.name[0]
-        alias = sound.name[1:]
+        name = sound.name
+        alias = sound.alias
         names[name] = sound
         for n in alias:
             aliases[n] = name

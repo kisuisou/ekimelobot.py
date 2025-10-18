@@ -3,7 +3,8 @@ from attrs import define
 @define
 class SoundConfig:
     file: str
-    name: list[str]
+    name: str
+    alias: list[str]
     comment: str
 
 @define
