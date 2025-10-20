@@ -81,7 +81,7 @@ async def list_command(interaction: discord.Interaction):
     for alias, formal in alias_dict.items():
         formal_to_aliases[formal].append(alias)
     for k, v in formal_to_aliases.items():
-        embed.add_field(name=k, value=f"alias: {v}", inline=False)
+        embed.add_field(name=k, value=f"alias: `{"`, `".join(v)}`", inline=False)
     await interaction.response.send_message(embed=embed)
 
 @client.event
