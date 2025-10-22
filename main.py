@@ -1,70 +1,26 @@
 import os, discord, asyncio
-from discord import app_commands, Emoji
+from discord import app_commands, Emoji, Embed
 from dotenv import load_dotenv
-from attrs import define
 from cattrs import structure
 from pathlib import Path
+from collections import defaultdict
 import tomllib
-import re
 
-@define
-class SoundConfig:
-    file: str
-    comment: str
-
-@define
-class EmojiConfig:
-    name: str
-    id: int
-
-@define
-class Config:
-    sound_dir: str
-    sounds: dict[str, SoundConfig]
-    emoji: list[EmojiConfig]
+from src.model import Config
+from src.emoji import load_emoji, replace_custom_emojis
+from src.config import build_dict
 
 with open('config.toml', 'rb') as f:
     config = structure(tomllib.load(f), Config)
 
 SOUND_DIR = Path(config.sound_dir)
 
+name_dict, alias_dict = build_dict(config.sounds)
+
 load_dotenv("./.env")
 
 TOKEN=os.environ.get("TOKEN")
 SERVER_ID=os.environ.get("SERVER_ID")
-
-def load_emoji(client, config: Config) -> dict[str, Emoji]:
-    """tomlにあるemojiを全てdiscordに照会しemoji objectを得てdictにする
-
-    :param client: discordクライアント 
-    :type client: Discord.Client
-    :param config: configのdata class 
-    :type config: Config
-    :returns: emojiの名前をkey、Emojiの実体をvalueとしたdict（e.g. `{':st:': (some Emoji object)}`）
-    :rtype: dict[str, Emoji]
-    """
-    emojis: dict[str, Emoji] = {}
-    for emoji_config in config.emoji:
-        name = emoji_config.name
-        emoji = client.get_emoji(emoji_config.id)
-        if emoji is None:
-            continue
-        emojis[f':{name}:'] = emoji
-    return emojis
-
-def replace_custom_emojis(txt: str, d: dict[str, Emoji]) -> str:
-    """コマンドへの返答にemoji（e.g. `:st:`）が含められていた場合、discordのEmoji objectに変換する
-
-    :param txt: 変換対象の文字列
-    :type txt: str
-    :param d: Emoji変換用dict（load_emojiで返されるdictを想定）
-    :type d: dict[str, Emoji]
-    :returns: custom emojiをdiscordで読めるように変換した文字列
-    :rtype: str
-    """
-    # `:st:|:jr_west:`のようなregexパターンを作る
-    pattern = '|'.join(re.escape(k) for k in d.keys()) 
-    return re.sub(pattern, lambda m: str(d[m.group(0)]), txt)
 
 intents = discord.Intents.default()
 intents.message_content = True 
@@ -79,14 +35,6 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
             await interaction.response.send_message("❌ ボイスチャンネルに入ってから実行してください。")
             return
 
-        if not ekimelo in config.sounds.keys():
-            await interaction.response.send_message("❌ 駅メロが見つかりませんでした。")
-            return
-
-        if not os.path.exists(path):
-            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
-            return
-
         voice_channel = interaction.user.voice.channel
 
         if interaction.guild.voice_client:
@@ -94,8 +42,21 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         else:
             vc = await voice_channel.connect()
 
-        data = config.sounds[ekimelo]
+        global name_dict
+        global alias_dict
+        if ekimelo in alias_dict:
+            name = alias_dict[ekimelo]
+            data = name_dict[name]
+        elif ekimelo in name_dict:
+            data = name_dict[ekimelo]
+        else:
+            await interaction.response.send_message("❌ 駅メロが見つかりませんでした。")
+            return
         path = SOUND_DIR / data.file
+
+        if not os.path.exists(path):
+            await interaction.response.send_message("❌ ファイルが見つかりませんでした。")
+            return
 
         if vc.is_playing():
             vc.stop()
@@ -112,6 +73,16 @@ async def emplay_command(interaction: discord.Interaction, ekimelo: str):
         comment = replace_custom_emojis(data.comment, emojis)
         await interaction.response.send_message(f'▶️ {comment}')
         vc.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=str(path), before_options="-nostdin", options="-vn -ar 48000 -ac 2 -f s16le"), after=my_after)
+
+@tree.command(name="list",description="botに登録されているメロディを呼び出すための名前、別名と一緒に表示します")
+async def list_command(interaction: discord.Interaction):
+    embed = Embed(title="ekimelobotに登録されているメロディ一覧")
+    formal_to_aliases = defaultdict(list)
+    for alias, formal in alias_dict.items():
+        formal_to_aliases[formal].append(alias)
+    for k, v in formal_to_aliases.items():
+        embed.add_field(name=k, value=f"alias: `{"`, `".join(v)}`", inline=False)
+    await interaction.response.send_message(embed=embed)
 
 @client.event
 async def on_ready():

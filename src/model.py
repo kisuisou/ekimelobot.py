@@ -1,0 +1,19 @@
+from attrs import define
+
+@define
+class SoundConfig:
+    file: str
+    name: str
+    alias: list[str]
+    comment: str
+
+@define
+class EmojiConfig:
+    name: str
+    id: int
+
+@define
+class Config:
+    sound_dir: str
+    sounds: list[SoundConfig]
+    emoji: list[EmojiConfig]
